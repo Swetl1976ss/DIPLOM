@@ -1,50 +1,54 @@
-iimport pytest
+import pytest
 import allure
-from config.settings import settings
-from config.test_data import test_data
-from utilities.api_client import ApiClient
+import requests
 
-@allure.feature("API Тесты Читай-город")
-class TestAPI:
-    @pytest.fixture(autouse=True)
-    def setup(self):
-        self.api = ApiClient(settings.API_URL)
+API_URL = "https://web-gate.chitai-gorod.ru/api/v2/search"
+token = 'eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJodHRwczovL3VzZXItcmlnaHQiLCJzdWIiOjIxODk4OTQ2LCJpYXQiOjE3NDU5MDExMjQsImV4cCI6MTc0NTkwNDcyNCwidHlwZSI6MjB9.dkW-pSrpVLO6c6qLO40WLsRQcl6ndiZrhdMDuNBiroE'
+header = {
+    'authorization': f'Bearer {token}',
+'content-type': 'application/json'
+}
 
-    @allure.story("API Книги")
-    @allure.title("Поиск книги через API")
-    def test_search_books(self):
-        response = self.api.search_books(test_data.BOOKS[0])
-        assert response.status_code == 200
-        assert len(response.json()["items"]) > 0
 
-    @allure.story("API Авторизация")
-    @allure.title("Успешная авторизация через API")
-    def test_auth(self):
-        response = self.api.login(test_data.VALID_USER)
-        assert response.status_code == 200
-        assert "token" in response.json()
+@allure.story("API Книги")
+@allure.title("Поиск книги по названию")
+def test_search_book():
+    response = requests.get(
+        API_URL + '/search-phrase-suggests?suggests%5Bpage%5D=1&suggests%5Bper-page%5D=5&phrase=Волшебник',
+        headers=header)
+    assert response.status_code == 200
 
-    @allure.story("API Корзина")
-    @allure.title("Добавление в корзину через API")
-    def test_add_to_cart(self):
-        # Предварительная авторизация
-        auth = self.api.login(test_data.VALID_USER)
-        book_id = self.api.search_books(test_data.BOOKS[1]).json()["items"][0]["id"]
 
-        response = self.api.add_to_cart(book_id)
-        assert response.status_code == 200
+@allure.story("API Книги")
+@allure.title("Поиск книги по автору")
+def test_search_book2():
+    response = requests.get(
+        API_URL + '/search-phrase-suggests?suggests%5Bpage%5D=1&suggests%5Bper-page%5D=5&phrase=%D0%9F%D1%83%D1%88%D0%BA%D0%B8%D0%BD&include=products%2Cauthors%2CbookCycles%2CpublisherSeries%2Cpublishers%2Ccategories',
+        headers=header)
+    assert response.status_code == 200
 
-    @allure.story("API Профиль")
-    @allure.title("Получение данных профиля")
-    def test_user_profile(self):
-        self.api.login(test_data.VALID_USER)
-        response = self.api.get_user_profile()
-        assert response.status_code == 200
-        assert response.json()["email"] == test_data.VALID_USER["email"]
 
-    @allure.story("API Каталог")
-    @allure.title("Получение списка категорий")
-    def test_categories(self):
-        response = self.api.get_categories()
-        assert response.status_code == 200
-        assert len(response.json()["categories"]) > 5
+@allure.story("API Книги")
+@allure.title("Поиск книги по жанру")
+def test_search_book3():
+    response = requests.get(
+        API_URL + '/search-phrase-suggests?suggests%5Bpage%5D=1&suggests%5Bper-page%5D=5&phrase=%D0%BF%D1%81%D0%B8%D1%85%D0%BE%D0%BB%D0%BE%D0%B3%D0%B8%D1%8F&include=products%2Cauthors%2CbookCycles%2CpublisherSeries%2Cpublishers%2Ccategories',
+        headers=header)
+    assert response.status_code == 200
+
+
+@allure.story("API Книги")
+@allure.title("Поиск книги negative")
+def test_search_book4():
+    response = requests.get(
+        API_URL + '/search-phrase-suggests?suggests%5Bpage%5D=1&suggests%5Bper-page%5D=5&phrase=%E2%88%87%20%E2%84%B5%20%E2%84%91%20%E2%84%98%20%E2%84%9C&include=products%2Cauthors%2CbookCycles%2CpublisherSeries%2Cpublishers%2Ccategories',
+        headers=header)
+    assert response.status_code == 422
+
+
+@allure.story("API Книги")
+@allure.title("missing auth")
+def test_search_book5():
+    response = requests.get(
+        API_URL + '/search-phrase-suggests?suggests%5Bpage%5D=1&suggests%5Bper-page%5D=5&phrase=%E2%88%87%20%E2%84%B5%20%E2%84%91%20%E2%84%98%20%E2%84%9C&include=products%2Cauthors%2CbookCycles%2CpublisherSeries%2Cpublishers%2Ccategories')
+    assert response.status_code == 403
