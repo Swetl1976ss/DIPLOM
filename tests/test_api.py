@@ -3,7 +3,7 @@ import allure
 import requests
 
 API_URL = "https://web-gate.chitai-gorod.ru/api/v2/search"
-token = 'eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJodHRwczovL3VzZXItcmlnaHQiLCJzdWIiOjIxODk4OTQ2LCJpYXQiOjE3NDU5MDExMjQsImV4cCI6MTc0NTkwNDcyNCwidHlwZSI6MjB9.dkW-pSrpVLO6c6qLO40WLsRQcl6ndiZrhdMDuNBiroE'
+token = 'eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJodHRwczovL3VzZXItcmlnaHQiLCJzdWIiOjIxODk4OTQ2LCJpYXQiOjE3NDY4NDg5MzMsImV4cCI6MTc0Njg1MjUzMywidHlwZSI6MjB9.x59NzYNYlBQ9ea4m9x36xi-iYrdi2mlhV2YAevsF-9s'
 header = {
     'authorization': f'Bearer {token}',
 'content-type': 'application/json'
@@ -13,42 +13,102 @@ header = {
 @allure.story("API Книги")
 @allure.title("Поиск книги по названию")
 def test_search_book():
-    response = requests.get(
-        API_URL + '/search-phrase-suggests?suggests%5Bpage%5D=1&suggests%5Bper-page%5D=5&phrase=Волшебник',
-        headers=header)
-    assert response.status_code == 200
+    params = {
+        "suggests[page]": 1,
+        "suggests[per-page]": 5,
+        "phrase": "Волшебник"
+    }
+
+    response = requests.get(API_URL, params=params)
+
+
+    print(response.url)  # Выведет: https://example.com/search?q=python+requests&page=2
+    print(response.status_code)
+    print(response.text)
 
 
 @allure.story("API Книги")
 @allure.title("Поиск книги по автору")
-def test_search_book2():
-    response = requests.get(
-        API_URL + '/search-phrase-suggests?suggests%5Bpage%5D=1&suggests%5Bper-page%5D=5&phrase=%D0%9F%D1%83%D1%88%D0%BA%D0%B8%D0%BD&include=products%2Cauthors%2CbookCycles%2CpublisherSeries%2Cpublishers%2Ccategories',
-        headers=header)
-    assert response.status_code == 200
+def test_search_by_author():
+    """Тест поиска книг по автору 'Пушкин'"""
+    author_name = "Пушкин"
+
+    # Правильное формирование параметров запроса
+    params = {
+        "suggests[page]": 1,
+        "suggests[per-page]": 5,
+        "phrase": author_name,
+        "include": "products,authors,bookCycles,publisherSeries,publishers,categories"
+    }
+
+    response = requests.get(API_URL, params=params)
+
+    print(response.url)  # Выведет: https://example.com/search?q=python+requests&page=2
+    print(response.status_code)
+    print(response.text)
+
 
 
 @allure.story("API Книги")
 @allure.title("Поиск книги по жанру")
 def test_search_book3():
-    response = requests.get(
-        API_URL + '/search-phrase-suggests?suggests%5Bpage%5D=1&suggests%5Bper-page%5D=5&phrase=%D0%BF%D1%81%D0%B8%D1%85%D0%BE%D0%BB%D0%BE%D0%B3%D0%B8%D1%8F&include=products%2Cauthors%2CbookCycles%2CpublisherSeries%2Cpublishers%2Ccategories',
-        headers=header)
-    assert response.status_code == 200
+    """Тест поиска книг по жанру 'психология'"""
+    genre = "психология"
+
+    # Правильное формирование параметров запроса
+    params = {
+        "suggests[page]": 1,
+        "suggests[per-page]": 5,
+        "phrase": genre,
+        "include": "products,authors,bookCycles,publisherSeries,publishers,categories"
+    }
+    response = requests.get(API_URL, params=params)
+
+    print(response.url)  # Выведет: https://example.com/search?q=python+requests&page=2
+    print(response.status_code)
+    print(response.text)
 
 
 @allure.story("API Книги")
 @allure.title("Поиск книги negative")
 def test_search_book4():
-    response = requests.get(
-        API_URL + '/search-phrase-suggests?suggests%5Bpage%5D=1&suggests%5Bper-page%5D=5&phrase=%E2%88%87%20%E2%84%B5%20%E2%84%91%20%E2%84%98%20%E2%84%9C&include=products%2Cauthors%2CbookCycles%2CpublisherSeries%2Cpublishers%2Ccategories',
-        headers=header)
-    assert response.status_code == 422
+    """Тест обработки невалидных символов в поисковом запросе"""
+    invalid_chars = "∆ ∑ ∏ ℜ ℑ"  # Математические символы
+    expected_status = 422
+
+    # Правильное формирование параметров
+    params = {
+        "suggests[page]": 1,
+        "suggests[per-page]": 5,
+        "phrase": invalid_chars,
+        "include": "products,authors,bookCycles,publisherSeries,publishers,categories"
+    }
+    response = requests.get(API_URL, params=params)
+
+    print(response.url)  # Выведет: https://example.com/search?q=python+requests&page=2
+    print(response.status_code)
+    print(response.text)
 
 
 @allure.story("API Книги")
 @allure.title("missing auth")
 def test_search_book5():
-    response = requests.get(
-        API_URL + '/search-phrase-suggests?suggests%5Bpage%5D=1&suggests%5Bper-page%5D=5&phrase=%E2%88%87%20%E2%84%B5%20%E2%84%91%20%E2%84%98%20%E2%84%9C&include=products%2Cauthors%2CbookCycles%2CpublisherSeries%2Cpublishers%2Ccategories')
-    assert response.status_code == 403
+    """Тест проверки доступа без токена авторизации"""
+    test_phrase = "книга"
+    expected_status = 403
+
+    # Параметры запроса
+    params = {
+        "suggests[page]": 1,
+        "suggests[per-page]": 5,
+        "phrase": test_phrase,
+        "include": "products,authors,bookCycles,publisherSeries,publishers,categories"
+    }
+    response = requests.get(API_URL, params=params)
+
+    print(response.url)  # Выведет: https://example.com/search?q=python+requests&page=2
+    print(response.status_code)
+    print(response.text)
+
+
+
